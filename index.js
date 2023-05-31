@@ -1,27 +1,40 @@
+const http = require('http');
 const express = require('express');
-require('dotenv').config();
+const socketIO = require('socket.io');
 const cors = require('cors');
-const { dbConnection } = require('./database/config');
 
-// Crear el servidor de express
 const app = express();
+app.use(cors());
 
-// Base de datos
-dbConnection();
+const server = http.createServer(app);
+const io = socketIO(server, {
+  cors: {
+    origin: "http://localhost:5173"
+  }
+});
 
-// CORS
-app.use(cors())
+const maxComments = 100;
+let comments = [];
 
-// Directorio Público
-app.use( express.static('public') );
+io.on('connection', (socket) => {
+  console.log('Cliente conectado');
 
-// Lectura y parseo del body
-app.use( express.json() );
+  socket.on('mensaje-enviado', ({ name, text }) => {
+    const comment = { name, text };
+    comments.push(comment);
 
-// Rutas
-app.use('/api/auth', require('./routes/auth') );
+    while (comments.length > maxComments) {
+      comments.shift();
+    }
 
-// Escuchar peticiones
-app.listen( process.env.PORT, () => {
-    console.log(`Servidor corriendo en puerto ${ process.env.PORT }`);
+    io.emit('mensaje-nuevo', comment);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Cliente desconectado');
+  });
+});
+
+server.listen(4000, () => {
+  console.log('Servidor escuchando en el puerto 3001');
 });
