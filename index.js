@@ -1,33 +1,44 @@
 const http = require('http');
 const express = require('express');
-const socketIO = require('socket.io');
+const { Server } = require('socket.io');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
 
-const server = http.createServer(app);
-const io = socketIO(server, {
+const headers = {
   cors: {
     origin: "*"
   }
+}
+app.use(cors(headers));
+
+const httpserver = http.createServer(app);
+const io = new Server(httpserver);
+
+app.get('/', (req, res) => {
+  <div>
+    <h1>Servidor del backend en funcionamiento</h1>
+    <h2>Sockets del chat en el puerto 4000</h2>
+  </div>
 });
 
-const maxComments = 100;
+const maxComments = 50;
 let comments = [];
 
 io.on('connection', (socket) => {
   console.log('Cliente conectado');
+  socket.emit('init-array', JSON.stringify(comments))
 
-  socket.on('mensaje-enviado', ({ name, text }) => {
-    const comment = { name, text };
-    comments.push(comment);
+  socket.on('mensaje-enviado', (payload) => {
+    console.log(`Mensaje por ${payload.name}: ${payload.text}`)
+
+    comments.push(payload);
 
     while (comments.length > maxComments) {
       comments.shift();
     }
 
-    io.emit('mensaje-nuevo', comment);
+    socket.broadcast.emit('mensaje-nuevo', payload);
   });
 
   socket.on('disconnect', () => {
@@ -35,6 +46,6 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(4000, () => {
-  console.log('Servidor escuchando en el puerto 3001');
+httpserver.listen(4000, () => {
+  console.log('Servidor escuchando en el puerto 4000');
 });
