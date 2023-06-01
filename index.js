@@ -16,12 +16,7 @@ const httpserver = http.createServer(app);
 const io = new Server(httpserver);
 
 app.get('/', (req, res) => {
-  res.send(
-  <div>
-    <h1>Servidor del backend en funcionamiento</h1>
-    <h2>Sockets del chat en el puerto 4000</h2>
-  </div>
-)});
+  res.send('<h1>Servidor del backend en funcionamiento</h1><h2>Sockets del chat en el puerto 4000</h2>')});
 
 const maxComments = 50;
 let comments = [];
